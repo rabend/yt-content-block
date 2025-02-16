@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>YouTube Content Blocker</title>
+  <style>
+    body {
+      width: 300px;
+      padding: 15px;
+      font-family: "YouTube Sans", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--yt-spec-base-background, #fff);
+      color: var(--yt-spec-text-primary, #0f0f0f);
+      margin: 0;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    h2 {
+      font-size: 16px;
+      font-weight: 500;
+      margin: 0 0 8px 0;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 8px 16px;
+      border: 1px solid var(--yt-spec-badge-chip-background, #0000001a);
+      border-radius: 18px;
+      font-size: 14px;
+      background: var(--yt-spec-base-background, #fff);
+      color: var(--yt-spec-text-primary, #0f0f0f);
+      transition: all 0.2s ease;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--yt-spec-call-to-action, #065fd4);
+      box-shadow: 0 0 0 1px var(--yt-spec-call-to-action, #065fd4);
+    }
+
+    button {
+      border: none;
+      padding: 8px 16px;
+      border-radius: 18px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      background-color: var(--yt-spec-badge-chip-background, #0000001a);
+      color: var(--yt-spec-text-primary, #0f0f0f);
+      white-space: nowrap;
+    }
+
+    button:hover {
+      background-color: var(--yt-spec-badge-chip-background-hover, #0000002b);
+    }
+
+    #keywordsList {
+      margin-top: 4px;
+      max-height: 200px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .keyword-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 16px;
+      background-color: var(--yt-spec-badge-chip-background, #0000001a);
+      border-radius: 18px;
+      transition: background-color 0.2s ease;
+    }
+
+    .keyword-item:hover {
+      background-color: var(--yt-spec-badge-chip-background-hover, #0000002b);
+    }
+
+    .keyword-text {
+      font-size: 14px;
+      color: var(--yt-spec-text-primary, #0f0f0f);
+    }
+
+    .remove-btn {
+      background: none;
+      padding: 4px 8px;
+      font-size: 12px;
+      opacity: 0.8;
+    }
+
+    .remove-btn:hover {
+      opacity: 1;
+      background-color: var(--yt-spec-badge-chip-background-hover, #0000002b);
+    }
+
+    /* Dark mode support */
+    @media (prefers-color-scheme: dark) {
+      body {
+        background-color: var(--yt-spec-base-background, #0f0f0f);
+        color: var(--yt-spec-text-primary, #fff);
+      }
+
+      input[type="text"] {
+        background: var(--yt-spec-base-background, #0f0f0f);
+        border-color: var(--yt-spec-badge-chip-background, #ffffff1a);
+        color: var(--yt-spec-text-primary, #fff);
+      }
+
+      button, .keyword-item {
+        background-color: var(--yt-spec-badge-chip-background, #ffffff1a);
+        color: var(--yt-spec-text-primary, #fff);
+      }
+
+      button:hover, .keyword-item:hover {
+        background-color: var(--yt-spec-badge-chip-background-hover, #ffffff2b);
+      }
+
+      .keyword-text {
+        color: var(--yt-spec-text-primary, #fff);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div>
+      <h2>YouTube Content Blocker</h2>
+      <div class="input-group">
+        <input type="text" id="keywordInput" placeholder="Enter keyword to block">
+        <button id="addKeyword">Add</button>
+      </div>
+    </div>
+    <div id="keywordsList"></div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html> 

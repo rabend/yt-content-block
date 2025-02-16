@@ -104,6 +104,104 @@
       background-color: var(--yt-spec-badge-chip-background-hover, #0000002b);
     }
 
+    .reset-section {
+      margin-top: 16px;
+      border-top: 1px solid var(--yt-spec-badge-chip-background, #0000001a);
+      padding-top: 16px;
+    }
+    
+    .blocked-videos-section {
+      margin-top: 16px;
+      border-top: 1px solid var(--yt-spec-badge-chip-background, #0000001a);
+      padding-top: 16px;
+    }
+
+    .keyword-group {
+      margin-bottom: 12px;
+    }
+
+    .keyword-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background-color: var(--yt-spec-badge-chip-background, #0000001a);
+      border-radius: 12px;
+      cursor: pointer;
+      margin-bottom: 8px;
+    }
+
+    .keyword-header:hover {
+      background-color: var(--yt-spec-badge-chip-background-hover, #0000002b);
+    }
+
+    .keyword-count {
+      font-size: 12px;
+      opacity: 0.7;
+    }
+
+    .blocked-video-list {
+      display: none;
+      margin-left: 12px;
+    }
+
+    .blocked-video-list.expanded {
+      display: block;
+    }
+
+    .blocked-video-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px;
+      border-radius: 8px;
+      margin-bottom: 4px;
+      font-size: 13px;
+      background-color: var(--yt-spec-badge-chip-background, #0000001a);
+      opacity: 0.9;
+    }
+
+    .blocked-video-item:hover {
+      opacity: 1;
+      background-color: var(--yt-spec-badge-chip-background-hover, #0000002b);
+    }
+
+    .blocked-video-title {
+      flex: 1;
+      margin-right: 8px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .restore-video-btn {
+      padding: 4px 8px;
+      font-size: 12px;
+      opacity: 0.8;
+      flex-shrink: 0;
+    }
+
+    .restore-video-btn:hover {
+      opacity: 1;
+    }
+
+    .no-blocked-videos {
+      text-align: center;
+      padding: 16px;
+      color: var(--yt-spec-text-secondary, #606060);
+      font-style: italic;
+    }
+
+    .reset-button {
+      width: 100%;
+      background-color: var(--yt-spec-badge-chip-background, #0000001a);
+      color: #cc0000;
+    }
+    
+    .reset-button:hover {
+      background-color: rgba(204, 0, 0, 0.1);
+    }
+
     /* Dark mode support */
     @media (prefers-color-scheme: dark) {
       body {
@@ -129,6 +227,31 @@
       .keyword-text {
         color: var(--yt-spec-text-primary, #fff);
       }
+
+      .reset-section {
+        border-top-color: var(--yt-spec-badge-chip-background, #ffffff1a);
+      }
+      
+      .reset-button {
+        background-color: var(--yt-spec-badge-chip-background, #ffffff1a);
+        color: #ff4e45;
+      }
+      
+      .reset-button:hover {
+        background-color: rgba(255, 78, 69, 0.2);
+      }
+
+      .blocked-video-item {
+        background-color: var(--yt-spec-badge-chip-background, #ffffff1a);
+      }
+
+      .blocked-video-item:hover {
+        background-color: var(--yt-spec-badge-chip-background-hover, #ffffff2b);
+      }
+
+      .no-blocked-videos {
+        color: var(--yt-spec-text-secondary, #aaa);
+      }
     }
   </style>
 </head>
@@ -142,6 +265,13 @@
       </div>
     </div>
     <div id="keywordsList"></div>
+    <div class="blocked-videos-section">
+      <h2>Blocked Videos</h2>
+      <div id="blockedVideosList"></div>
+    </div>
+    <div class="reset-section">
+      <button id="resetAll" class="reset-button">Reset All Data</button>
+    </div>
   </div>
   <script src="popup.js"></script>
 </body>

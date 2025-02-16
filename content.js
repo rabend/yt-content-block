@@ -38,56 +38,32 @@ function handlePermanentRemoval(videoElement, videoId) {
   // Prevent processing this element again during this removal
   videoElement.dataset.beingRemoved = 'true';
   
-  // Remove blocked state and overlay first
-  videoElement.classList.remove('blocked-content');
-  const existingOverlay = videoElement.querySelector('.blocked-overlay');
-  if (existingOverlay) {
-    existingOverlay.remove();
-  }
-
-  // Hide the original content
-  const contentContainer = videoElement.querySelector('#content');
-  if (contentContainer) {
-    contentContainer.style.display = 'none';
-  }
-
-  // Create and add the placeholder
-  const placeholder = createPlaceholder();
-  videoElement.classList.add('permanently-removed');
+  const titleElement = videoElement.querySelector('#video-title, #title');
+  const videoTitle = titleElement ? titleElement.textContent : '';
   
-  // Add undo functionality
-  const undoButton = placeholder.querySelector('.undo-removal');
-  undoButton.addEventListener('click', (e) => {
-    e.stopPropagation();
+  // Get the keyword that triggered the block
+  chrome.storage.sync.get(['blockedKeywords'], function(result) {
+    const keywords = result.blockedKeywords || [];
+    const matchedKeyword = keywords.find(keyword => 
+      videoTitle.toLowerCase().includes(keyword.toLowerCase())
+    );
+    
+    // Update the storage with video ID and the keyword that caused removal
     chrome.storage.sync.get(['permanentlyRemoved'], function(result) {
-      const updatedRemoved = (result.permanentlyRemoved || []).filter(id => id !== videoId);
-      chrome.storage.sync.set({ permanentlyRemoved: updatedRemoved }, function() {
-        videoElement.classList.remove('permanently-removed');
-        delete videoElement.dataset.beingRemoved;
-        placeholder.remove();
-        if (contentContainer) {
-          contentContainer.style.display = '';
-        }
-        processVideoElements(); // Reprocess to apply any keyword blocks
-      });
+      const permanentlyRemoved = result.permanentlyRemoved || [];
+      if (!permanentlyRemoved.some(item => item.id === videoId)) {
+        permanentlyRemoved.push({
+          id: videoId,
+          keyword: matchedKeyword,
+          title: videoTitle
+        });
+        chrome.storage.sync.set({ permanentlyRemoved: permanentlyRemoved }, function() {
+          videoElement.remove();
+        });
+      } else {
+        videoElement.remove();
+      }
     });
-  });
-  
-  videoElement.appendChild(placeholder);
-  
-  // Update the storage
-  chrome.storage.sync.get(['permanentlyRemoved'], function(result) {
-    const permanentlyRemoved = result.permanentlyRemoved || [];
-    if (!permanentlyRemoved.includes(videoId)) {
-      permanentlyRemoved.push(videoId);
-      chrome.storage.sync.set({ permanentlyRemoved: permanentlyRemoved }, function() {
-        // Remove the processing flag after storage is updated
-        delete videoElement.dataset.beingRemoved;
-      });
-    } else {
-      // Remove the processing flag if the video was already removed
-      delete videoElement.dataset.beingRemoved;
-    }
   });
 }
 
@@ -108,51 +84,11 @@ function processVideoElement(videoElement) {
     const keywords = result.blockedKeywords || [];
     const permanentlyRemoved = result.permanentlyRemoved || [];
     
-    // Handle permanently removed videos
-    if (permanentlyRemoved.includes(videoId)) {
-      videoElement.classList.add('permanently-removed');
-      // Only add placeholder if it doesn't exist
-      if (!videoElement.querySelector('.removed-video-placeholder')) {
-        const placeholder = createPlaceholder();
-        
-        // Add undo functionality
-        const undoButton = placeholder.querySelector('.undo-removal');
-        undoButton.addEventListener('click', (e) => {
-          e.stopPropagation();
-          chrome.storage.sync.get(['permanentlyRemoved'], function(result) {
-            const updatedRemoved = (result.permanentlyRemoved || []).filter(id => id !== videoId);
-            chrome.storage.sync.set({ permanentlyRemoved: updatedRemoved }, function() {
-              videoElement.classList.remove('permanently-removed');
-              placeholder.remove();
-              const contentContainer = videoElement.querySelector('#content');
-              if (contentContainer) {
-                contentContainer.style.display = '';
-              }
-              delete videoElement.dataset.processed;
-              processVideoElement(videoElement); // Reprocess to apply any keyword blocks
-            });
-          });
-        });
-        
-        // Clear existing content and add placeholder
-        const contentContainer = videoElement.querySelector('#content');
-        if (contentContainer) {
-          contentContainer.style.display = 'none';
-          videoElement.appendChild(placeholder);
-        }
-      }
+    // Handle permanently removed videos - now just remove them from DOM
+    const removedVideo = permanentlyRemoved.find(item => item.id === videoId);
+    if (removedVideo && keywords.includes(removedVideo.keyword)) {
+      videoElement.remove();
       return;
-    } else {
-      // Remove placeholder and show content if video is no longer permanently removed
-      videoElement.classList.remove('permanently-removed');
-      const placeholder = videoElement.querySelector('.removed-video-placeholder');
-      const contentContainer = videoElement.querySelector('#content');
-      if (placeholder) {
-        placeholder.remove();
-        if (contentContainer) {
-          contentContainer.style.display = '';
-        }
-      }
     }
     
     // Handle keyword-based blocking
@@ -272,14 +208,73 @@ observer.observe(document.body, {
 // Initial processing of existing videos
 processVideoElements();
 
-// Listen for changes in blocked keywords or removed videos
-chrome.storage.onChanged.addListener((changes) => {
-  if (changes.blockedKeywords || changes.permanentlyRemoved) {
-    // When keywords or removal list changes, we need to reprocess all videos
+// Function to clear all stored data
+function clearAllData() {
+  chrome.storage.sync.set({
+    blockedKeywords: [],
+    permanentlyRemoved: []
+  }, function() {
+    // Reprocess all videos to show everything
     document.querySelectorAll('ytd-rich-item-renderer, ytd-compact-video-renderer')
       .forEach(element => {
         delete element.dataset.processed;
         processVideoElement(element);
       });
+  });
+}
+
+// Listen for changes in blocked keywords or removed videos
+chrome.storage.onChanged.addListener((changes) => {
+  if (changes.blockedKeywords) {
+    const newKeywords = changes.blockedKeywords.newValue || [];
+    const oldKeywords = changes.blockedKeywords.oldValue || [];
+    
+    // Check if this is a complete reset (all data cleared)
+    if (newKeywords.length === 0 && oldKeywords && oldKeywords.length > 0) {
+      // This is likely a reset, reprocess all videos
+      document.querySelectorAll('ytd-rich-item-renderer, ytd-compact-video-renderer')
+        .forEach(element => {
+          delete element.dataset.processed;
+          processVideoElement(element);
+        });
+      return;
+    }
+    
+    const removedKeywords = oldKeywords.filter(k => !newKeywords.includes(k));
+    
+    if (removedKeywords.length > 0) {
+      // Get permanently removed videos and filter out ones removed by the removed keywords
+      chrome.storage.sync.get(['permanentlyRemoved'], function(result) {
+        const permanentlyRemoved = result.permanentlyRemoved || [];
+        const updatedRemoved = permanentlyRemoved.filter(item => 
+          !removedKeywords.includes(item.keyword)
+        );
+        
+        // Update storage with filtered list
+        chrome.storage.sync.set({ permanentlyRemoved: updatedRemoved }, function() {
+          // Reprocess all videos to show restored ones
+          document.querySelectorAll('ytd-rich-item-renderer, ytd-compact-video-renderer')
+            .forEach(element => {
+              delete element.dataset.processed;
+              processVideoElement(element);
+            });
+        });
+      });
+    } else {
+      // Just reprocess videos for other keyword changes
+      document.querySelectorAll('ytd-rich-item-renderer, ytd-compact-video-renderer')
+        .forEach(element => {
+          delete element.dataset.processed;
+          processVideoElement(element);
+        });
+    }
+  }
+});
+
+// Add message listener for commands from popup or background
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'clearAllData') {
+    clearAllData();
+    sendResponse({ success: true });
   }
 }); 
